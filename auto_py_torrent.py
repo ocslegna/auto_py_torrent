@@ -86,9 +86,9 @@ def insert():
 
 
 def initialize():
-    """Get input from the user for the first time. """
+    """Initialize script """
+    # TODO: Add all reference for the user here or in insert method.
     print("Welcome to auto_py_torrent!")
-    insert()
 
 
 def run_it():
