@@ -1,0 +1,73 @@
+TODO:
+
+Find a way, that such link provided:
+ - Get specific input type tag as I, and search button as S.
+ - Load text to search and download into I.
+ - "Hit" S and search for it.
+ - After this, there has to be a way to identify proper torrent link for the most rated torrent.
+ - It has to open a window(or not) to select yout torrent client and begin the download on in.
+   I think the user also has to input the folder where wants the files get downloaded.
+
+
+In the case of Torrent project 07-06-2017:
+  Hit torrentproject.se/?t=String+To+Search
+
+ 1)body id=torrents
+    div id=cnt 
+      div id=similarfiles class=tt 
+        second div indicates most rated torrent
+          first span contains link 
+            a href contains link 
+            -> we get the href and join it with torrentproject.se/ + .. and hit it
+
+ 2)body id=torrents
+    div id=cnt 
+      div id=nr_container 
+        div id=center_col2
+          div id=download 
+            second div
+              div class=usite
+                a href=magnet
+
+  One thing, in this case:
+    the a href from 1) that contains the string to call 2) and download the torrent:
+      has the string to look at the next page:
+        so we could:
+          strip/split this part
+          call 2)
+          search the control containing a part string as our string
+          copy the magnet string 
+          finish? connection with this site
+          open our torrent client and start the download inside our folder.
+
+  If a div contains "No results found for" -> no torrents have been found
+ 
+  1) 
+  for tag in soup.find_all(re.compile("No results")):
+      if tag.class == 'gac_bb':
+          True
+
+  2) returns an element or None # FUNCIONA
+  import re
+  soup.find(string=re.compile("No results"))
+
+  3) returns a list or empty list # NO FUNCIONA, debe ser exacto
+  soup.find_all(div=re.compile("No results"))
+
+  4) soup.find_all("div", string="No results") # no funciona, debe ser exacto
+
+  5) soup.find_all("div", string=re.compile("No results"))
+
+  probar -> soup.find("div", string=re.compile("No results"))
+
+  5) Me parece que busca exactamente ese string, y no una parte como re.compile
+  soup.find_all(string="No results") # debe ser exacto
+
+  6) usar requests: # funciona
+  url = "url"
+  response = requests.get(url)
+  html = response.content
+  if "No results" in html:
+    # do something
+
+
