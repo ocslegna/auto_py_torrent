@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tool for automate torrent download."""
+"""auto_py_torrent.
+
+This module provides utilities to download a torrent within specific types.
+
+"""
+
 
 # Author: Gabriel Scotillo
 # URL: https://ocslegna.herokuapp.com
@@ -10,8 +15,11 @@
 # This tool is for educational purposes only. Any damage you make will not
 #     affect the author.
 
+
 import os
 import sys
+import traceback
+import logging
 import argparse
 import re
 import requests
@@ -24,10 +32,42 @@ args = None
 found = False
 modes = ['best_rated', 'list']
 keep_search = True
-str_search = ""
-torr_page = ""
-torrents = [{'torrent_project': {'key_search': 'No results'}},
-            {'kickass': {'key_search': 'Download torrent'}}]
+key_search = ""
+page = ""
+string_search = ""
+torrent_page = ""
+torrents = [{'torrent_project':
+             {'page': 'https://torrentproject.se/?t=',
+              'key_search': 'No results'}},
+            {'the_pirate_bay':
+             {'page': 'https://proxyspotting.in/s/?q=',
+              'key_search': 'No hits'}},
+            {'torrentz2':
+             {'page': 'https://torrentz2.eu/search?f=',
+              'key_search': 'did not match'}},
+            {'rarbg':
+             {'page': 'https://rarbg.to/torrents.php?search=',
+              'key_search': '<div id="pager_links"></div>'}},
+            {'1337x':
+             {'page': 'https://1337x.to/search/',
+              'key_search': 'No results were returned'}},
+            {'eztv':
+             {'page': 'https://eztv.ag/search/',
+              'key_search': 'It does not have any.'}},
+            {'limetorrents':
+             {'page': 'https://www.limetorrents.cc/search/all/',
+              'key_search': 'No results found'}},
+            {'isohunt':
+             {'page': 'https://isohunt.to/torrents/?ihq=',
+              'key_search': 'No results found'}},
+            {'torrentdownloads':
+             {'page': 'https://www.torrentdownloads.me/search/?search=',
+              'key_search': 'No results found'}},
+            {'demonoid':
+             {'page': 'https://www.demonoid.pw/files/?query=',
+              'key_search': 'No torrents found'}}]
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def next_step():
@@ -43,10 +83,12 @@ def download_torrent():
         print(1)
 
 
-def torrents_found(content):
-    """Check if specific element/info is obtained in content_page."""
-    # TODO: Modify first key with selected global input.
-    if (torrents["torrent_project"]["key_search"]) not in content:
+def torrents_found():
+    """Check if specific element/info is obtained in content_page.
+
+    This implies the same search key in the torrent page.
+    """
+    if (key_search) not in content_page:
         return True
     else:
         return False
@@ -54,12 +96,13 @@ def torrents_found(content):
 
 def select_torrent():
     """Select torrent."""
+    # TODO: next! (:
     global found
     found = torrents_found(content_page)
 
     if not(found):
         # TODO: Add global user input torrent.
-        print("No torrents found.")
+        print('No torrents found.')
     else:
         # TODO: Modify this else doc, and add properly logic.
         #       If list, [for each torrent page separate functionality.]
@@ -70,27 +113,42 @@ def select_torrent():
         """
 
 
+def build_url():
+    """Build appropiate encoded URL.
+
+    This implies the same way of searching a torrent as in the page itself.
+    """
+    url = requests.utils.requote_uri(torrent_page + string_search)
+    if page == page == '1337x':
+        return(url + '/1/')
+    elif page == 'limetorrents':
+        return(url + '/')
+    else:
+        return(url)
+
+
 def search_torrent():
     """Search the torrent."""
-    # TODO: modify torrents sub index with user input preference
-    url = torrents[0] + str_search + "/"
+    url = build_url()
     try:
         global content_page
         content_page = requests.get(url)
     except requests.exceptions.RequestException as e:
-        raise SystemExit('\n' + str(e))
+        raise SystemExit('\nAn error has ocurred: \n' + str(e))
 
 
 def insert():
     """Insert args values into global variables."""
-    # TODO: Fill variables with args elements.
-    #       Add mode.
-    #       Erase print, verify.
-    print("Insert torrent page name and string search in different lines: ")
-    global torr_page
-    torr_page = input()
-    global str_search
-    str_search = input()
+    global page
+    page = list(torrents[args.torr_page].keys())[0]
+    global mode_search
+    mode_search = modes[args.mode]
+    global torrent_page
+    torrent_page = torrents[args.torr_page]['page']
+    global string_search
+    string_search = args.str_search
+    global key_search
+    key_search = torrents[args.torr_page]['key_search']
 
 
 def initialize():
@@ -110,8 +168,8 @@ def parse():
         '''\
         use "python %(prog)s --help" for more information.
         Examples:
-          use "python %(prog)s 0 0 "String search" for example. # best rated.
-          use "python %(prog)s 1 0 "String search" for example. # list rated.
+          use "python %(prog)s 0 0 "String search" # best rated.
+          use "python %(prog)s 1 0 "String search" # list rated.
         ''')
     epi = textwrap.dedent(
         '''\
@@ -131,12 +189,12 @@ def parse():
                         type=int,
                         help='Select mode of torrent download.\n'
                              'e.g: 0 or 1')
-    parser.add_argument('torrent_page', action='store',
+    parser.add_argument('torr_page', action='store',
                         choices=range(len(torrents)),
                         type=int,
                         help='Select torrent page to download from.\n'
                              'e.g: 0 or 1 or .. N')
-    parser.add_argument('string_search', action='store',
+    parser.add_argument('str_search', action='store',
                         type=str,
                         help='Input torrent string to search.\n'
                              'e.g: "String search"')
@@ -161,4 +219,10 @@ if __name__ == '__main__':
     try:
         run_it()
     except KeyboardInterrupt:
-        print("\nSee you the next time.")
+        print('\nSee you the next time.')
+    except Exception:
+        """Get the full traceback."""
+        print('\nAn error has ocurred: \n' + traceback.format_exc())
+        logging.debug(traceback.format_exc())
+    finally:
+        print('Good bye!')
