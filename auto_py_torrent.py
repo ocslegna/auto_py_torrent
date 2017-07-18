@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """auto_py_torrent.
@@ -22,19 +22,26 @@ import traceback
 import logging
 import argparse
 import re
-import requests
 import textwrap
+import coloredlogs
+import requests
 
 from bs4 import BeautifulSoup
-
+from tabulate import tabulate
 
 args = None
+content_page = None
 found = False
+magnet = ""
 modes = ['best_rated', 'list']
+mode_search = ""
 keep_search = True
 key_search = ""
 page = ""
+selected = ""
 string_search = ""
+table = None
+torrent = ""
 torrent_page = ""
 torrents = [{'torrent_project':
              {'page': 'https://torrentproject.se/?t=',
@@ -59,15 +66,47 @@ torrents = [{'torrent_project':
               'key_search': 'No results found'}},
             {'isohunt':
              {'page': 'https://isohunt.to/torrents/?ihq=',
-              'key_search': 'No results found'}},
-            {'torrentdownloads':
-             {'page': 'https://www.torrentdownloads.me/search/?search=',
-              'key_search': 'No results found'}},
-            {'demonoid':
-             {'page': 'https://www.demonoid.pw/files/?query=',
-              'key_search': 'No torrents found'}}]
+              'key_search': 'No results found'}}]
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+coloredlogs.install()
+
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    BLACK = '\033[30m'
+    BLUE = '\033[34m'
+    GREEN = '\033[42m'
+    CYAN = '\033[36m'
+    RED = '\033[41m'
+    PURPLE = '\033[35m'
+    LIGHTBLUE = '\033[0m\033[34m'
+    LIGHTGREEN = '\033[0m\033[32m'
+    LIGHTCYAN = '\033[0m\033[36m'
+    LIGHTRED = '\033[0m\033[31m'
+    LIGHTPURPLE = '\033[0m\033[35m'
+    SEEDER = '\033[1m\033[32m'
+    LEECHER = '\033[1m\033[31m'
+
+    def disable(self):
+        self.HEADER = ''
+        self.OKBLUE = ''
+        self.OKGREEN = ''
+        self.WARNING = ''
+        self.FAIL = ''
+        self.ENDC = ''
+        self.BOLD = ''
+        self.UNDERLINE = ''
+        self.LIGHTGREEN = ''
+        self.LIGHTRED = ''
+        self.SEEDER = ''
+        self.LEECHER = ''
 
 
 def next_step():
@@ -77,40 +116,108 @@ def next_step():
 
 
 def download_torrent():
-    """Download torrent."""
+    """Download torrent.
+
+    Rated implies download  the unique best rated torrent found.
+    Otherwise: download the selected torrent.
+    """
     # TODO: do.
-    if found:
+    try:
+        if not(found):
+            return
+
+        # Also think about first magnet and then torrent.
+        if mode_search == 'rated':
+            print(1)
+        else:
+            print(1)
+    except:
+        logging.info('\nAn error has ocurred: \n')
+        logging.error(traceback.format_exc())
+        raise SystemExit()
+
+
+def build_table():
+    # TODO: finish.
+    if page == 'torrent_project':
+        headers = ['N.', 'Title', 'Seeders', 'leechers', 'Ages', 'Size']
+        hrefs = [span.find(href=re.compile('torrent.html'))['href'] for span in elements[0]]
+        titles = [span.find('a').get_text() for span in elements[0]]
+        seeders = [span.get_text() for span in elements[1]]
+        leechers = [span.get_text() for span in elements[2]]
+        ages = [span.get_text() for span in elements[3]]
+        sizes = [span.get_text() for span in elements[4]]
+
+        global table
+        table = [[Colors.BOLD + titles[i] + Colors.ENDC
+                  if (i+1) % 2 == 0
+                  else titles[i],
+                  Colors.SEEDER + seeders[i] + Colors.ENDC
+                  if (i+1) % 2 == 0
+                  else Colors.LIGHTGREEN + seeders[i] + Colors.ENDC,
+                  Colors.LEECHER + leechers[i] + Colors.ENDC
+                  if (i+1) % 2 == 0
+                  else Colors.LIGHTRED + leechers[i] + Colors.ENDC,
+                  Colors.BLUE + ages[i] + Colors.ENDC
+                  if (i+1) % 2 == 0
+                  else Colors.LIGHTBLUE + ages[i] + Colors.ENDC,
+                  Colors.PURPLE + sizes[i] + Colors.ENDC
+                  if (i+1) % 2 == 0
+                  else Colors.LIGHTPURPLE + sizes[i] + Colors.ENDC]
+                 for i in range(len(hrefs))]
+    else:
         print(1)
 
+    print(tabulate(table,
+                   headers=headers,
+                   tablefmt='fancy_grid',
+                   numalign='right',
+                   stralign='left',
+                   showindex=True))
 
-def torrents_found():
-    """Check if specific element/info is obtained in content_page.
 
-    This implies the same search key in the torrent page.
-    """
-    if (key_search) not in content_page:
-        return True
-    else:
-        return False
+def soupify():
+    soup = BeautifulSoup(content_page, 'lxml')
+    if page == 'torrent_project':
+        main = soup.find('div', {'id': 'similarfiles'})
+        if mode_search == 'rated':
+            rated_url = main.find(href=re.compile('torrent.html'))['href']
+            content_most_rated = requests.get(rated_url)
+            rated_soup = BeautifulSoup(content_most_rated, 'lxml')
+            global magnet
+            magnet = rated_soup.find('a', href=True, text=re.compile('Download'))['href']
+        else:
+            divs = main.find_all('div', limit=25)[1:]
+            global elements
+            elements = list(zip(*[d.find_all('span') for d in divs]))
 
 
 def select_torrent():
-    """Select torrent."""
-    # TODO: next! (:
-    global found
-    found = torrents_found(content_page)
+    """Select torrent.
 
-    if not(found):
-        # TODO: Add global user input torrent.
-        print('No torrents found.')
-    else:
-        # TODO: Modify this else doc, and add properly logic.
-        #       If list, [for each torrent page separate functionality.]
-        #       Else, [for each torrent page proceed to download best rated]
-        """Specify to user if it wants best rated torrent or select one from list.
-        If user wants best ratet change global bool value for download_torrent.
-        Else: build table with all data and enable the user select the torrent.
-        """
+    First check if specific element/info is obtained in content_page.
+    Specify to the user if it wants best rated torrent or select one from list.
+    If the user wants best rated:
+        Directly obtain the appropiate magnet/torrent link.
+    Else: build table with all data and enable the user select the torrent.
+    """
+    try:
+        global found
+        found = bool(key_search not in content_page)
+
+        if not(found):
+            logging.info('No torrents found.')
+            return
+
+        soupify()
+        build_table()
+        global selected
+        selected = input('>> ')
+        # Here let the user select the torrent if it is select mode
+    except:
+        logging.info('\nAn error has ocurred: \n')
+        logging.error(traceback.format_exc())
+        raise SystemExit()
 
 
 def build_url():
@@ -127,14 +234,16 @@ def build_url():
         return(url)
 
 
-def search_torrent():
-    """Search the torrent."""
+def get_content():
+    """Get content of the page through url."""
     url = build_url()
     try:
         global content_page
         content_page = requests.get(url)
     except requests.exceptions.RequestException as e:
-        raise SystemExit('\nAn error has ocurred: \n' + str(e))
+        logging.info('\nAn error has ocurred: \n' + str(e))
+        logging.error(traceback.format_exc())
+        raise SystemExit()
 
 
 def insert():
@@ -209,7 +318,7 @@ def run_it():
     initialize()
     while(keep_search):
         insert()
-        search_torrent()
+        get_content()
         select_torrent()
         download_torrent()
         next_step()
@@ -220,9 +329,8 @@ if __name__ == '__main__':
         run_it()
     except KeyboardInterrupt:
         print('\nSee you the next time.')
-    except Exception:
-        """Get the full traceback."""
-        print('\nAn error has ocurred: \n' + traceback.format_exc())
+    except:
+        print("\nAn error has ocurred: \n")
         logging.debug(traceback.format_exc())
     finally:
-        print('Good bye!')
+        logging.info("Good bye!")
