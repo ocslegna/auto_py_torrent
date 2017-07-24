@@ -1,2 +1,2 @@
-auto_py_torrent: Easy and automated tool for torrent downloading
+auto_py_torrent: Automated tool for torrent downloads.
 ================================================================
