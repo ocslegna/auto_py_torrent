@@ -27,11 +27,13 @@ import coloredlogs
 import requests
 
 from bs4 import BeautifulSoup
+from bs4 import UnicodeDammit
 from tabulate import tabulate
 
 args = None
 content_page = None
 found = False
+hrefs = None
 magnet = ""
 modes = ['best_rated', 'list']
 mode_search = ""
@@ -71,6 +73,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 coloredlogs.install()
 
+
 class Colors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -94,20 +97,6 @@ class Colors:
     SEEDER = '\033[1m\033[32m'
     LEECHER = '\033[1m\033[31m'
 
-    def disable(self):
-        self.HEADER = ''
-        self.OKBLUE = ''
-        self.OKGREEN = ''
-        self.WARNING = ''
-        self.FAIL = ''
-        self.ENDC = ''
-        self.BOLD = ''
-        self.UNDERLINE = ''
-        self.LIGHTGREEN = ''
-        self.LIGHTRED = ''
-        self.SEEDER = ''
-        self.LEECHER = ''
-
 
 def next_step():
     """Decide next step of the program."""
@@ -127,7 +116,10 @@ def download_torrent():
             return
 
         # Also think about first magnet and then torrent.
+        # should it be the SAME way to download it either it is rated or not?
         if mode_search == 'rated':
+            # torrent or magnet should be ready here.
+            # So, start download.
             print(1)
         else:
             print(1)
@@ -138,35 +130,61 @@ def download_torrent():
 
 
 def build_table():
-    # TODO: finish.
+    # TODO: In list mode, the components of the table are in elements.
+    headers = ['Title', 'Seeders', 'Leechers', 'Age', 'Size']
+    titles = []
+    seeders = []
+    leechers = []
+    ages = []
+    sizes = []
+
     if page == 'torrent_project':
-        headers = ['N.', 'Title', 'Seeders', 'leechers', 'Ages', 'Size']
-        hrefs = [span.find(href=re.compile('torrent.html'))['href'] for span in elements[0]]
         titles = [span.find('a').get_text() for span in elements[0]]
         seeders = [span.get_text() for span in elements[1]]
         leechers = [span.get_text() for span in elements[2]]
         ages = [span.get_text() for span in elements[3]]
         sizes = [span.get_text() for span in elements[4]]
 
-        global table
-        table = [[Colors.BOLD + titles[i] + Colors.ENDC
-                  if (i+1) % 2 == 0
-                  else titles[i],
-                  Colors.SEEDER + seeders[i] + Colors.ENDC
-                  if (i+1) % 2 == 0
-                  else Colors.LIGHTGREEN + seeders[i] + Colors.ENDC,
-                  Colors.LEECHER + leechers[i] + Colors.ENDC
-                  if (i+1) % 2 == 0
-                  else Colors.LIGHTRED + leechers[i] + Colors.ENDC,
-                  Colors.BLUE + ages[i] + Colors.ENDC
-                  if (i+1) % 2 == 0
-                  else Colors.LIGHTBLUE + ages[i] + Colors.ENDC,
-                  Colors.PURPLE + sizes[i] + Colors.ENDC
-                  if (i+1) % 2 == 0
-                  else Colors.LIGHTPURPLE + sizes[i] + Colors.ENDC]
-                 for i in range(len(hrefs))]
-    else:
-        print(1)
+        domain = 'https://torrentproject.se'
+        global hrefs
+        hrefs = [domain + span.find(href=re.compile('torrent.html'))['href'] for span in elements[0]]
+
+    elif page == 'the_pirate_bay':
+        for elem in elements[0]:
+            title = elem.find('a', {'class': 'detLink'}).get_text()
+            titles.append(title)
+
+            font_text = elem.find('font', {'class': 'detDesc'}).get_text()
+            dammit = UnicodeDammit(font_text)
+            age, size = dammit.unicode_markup.split(',')[:-1]
+            ages.append(age)
+            sizes.append(size)
+
+            domain = 'https://proxyspotting.in'
+            href = domain + elem.find('a', title=re.compile('magnet'))['href']
+            global hrefs
+            hrefs.append(href)
+
+        seeders = [elem.get_text() for elem in elements[1]]
+        leechers = [elem.get_text() for elem in elements[2]]
+
+    global table
+    table = [[Colors.BOLD + titles[i] + Colors.ENDC
+              if (i+1) % 2 == 0
+              else titles[i],
+              Colors.SEEDER + seeders[i] + Colors.ENDC
+              if (i+1) % 2 == 0
+              else Colors.LIGHTGREEN + seeders[i] + Colors.ENDC,
+              Colors.LEECHER + leechers[i] + Colors.ENDC
+              if (i+1) % 2 == 0
+              else Colors.LIGHTRED + leechers[i] + Colors.ENDC,
+              Colors.BLUE + ages[i] + Colors.ENDC
+              if (i+1) % 2 == 0
+              else Colors.LIGHTBLUE + ages[i] + Colors.ENDC,
+              Colors.PURPLE + sizes[i] + Colors.ENDC
+              if (i+1) % 2 == 0
+              else Colors.LIGHTPURPLE + sizes[i] + Colors.ENDC]
+              for i in range(len(hrefs))]
 
     print(tabulate(table,
                    headers=headers,
@@ -177,19 +195,41 @@ def build_table():
 
 
 def soupify():
+    """Get proper torrent/magnet information.
+
+    If search_mode is rated then get torrent/magnet.
+    If not, get all the elements to build the table.
+    There are different ways for each page.
+    """
+    # TODO: Add search reference for each page.
     soup = BeautifulSoup(content_page, 'lxml')
     if page == 'torrent_project':
         main = soup.find('div', {'id': 'similarfiles'})
         if mode_search == 'rated':
             rated_url = main.find(href=re.compile('torrent.html'))['href']
-            content_most_rated = requests.get(rated_url)
+            domain = 'https://torrentproject.se'
+            content_most_rated = requests.get(domain + rated_url)
             rated_soup = BeautifulSoup(content_most_rated, 'lxml')
             global magnet
             magnet = rated_soup.find('a', href=True, text=re.compile('Download'))['href']
         else:
-            divs = main.find_all('div', limit=25)[1:]
+            divs = main.find_all('div', limit=30)[1:]
             global elements
             elements = list(zip(*[d.find_all('span') for d in divs]))
+    elif page == 'the_pirate_bay':
+        main = soup.find('table', {'id': 'searchResult'})
+
+        if mode_search == 'rated':
+            rated_url = main.find('a', href=re.compile('torrent'))['href']
+            domain = 'https://proxyspotting.in'
+            content_most_rated = requests.get(domain + rated_url)
+            rated_soup = BeautifulSoup(content_most_rated)
+            global magnet
+            magnet = rated_soup.find('a', href=True, text=re.compile('Get this torrent'))['href']
+        else:
+            trs = main.find('tbody').find_all('tr')
+            global elements
+            elements = list(zip(*[tr.find_all('td')[1:] for tr in trs]))
 
 
 def select_torrent():
@@ -210,10 +250,11 @@ def select_torrent():
             return
 
         soupify()
-        build_table()
-        global selected
-        selected = input('>> ')
-        # Here let the user select the torrent if it is select mode
+        if mode_search != "rated":
+            build_table()
+            global selected
+            selected = input('>> ')
+            # TODO: Something else here? Something to validate the selected row?
     except:
         logging.info('\nAn error has ocurred: \n')
         logging.error(traceback.format_exc())
@@ -226,7 +267,7 @@ def build_url():
     This implies the same way of searching a torrent as in the page itself.
     """
     url = requests.utils.requote_uri(torrent_page + string_search)
-    if page == page == '1337x':
+    if page == '1337x':
         return(url + '/1/')
     elif page == 'limetorrents':
         return(url + '/')
