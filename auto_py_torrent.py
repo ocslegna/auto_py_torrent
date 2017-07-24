@@ -47,10 +47,12 @@ torrent = ""
 torrent_page = ""
 torrents = [{'torrent_project':
              {'page': 'https://torrentproject.se/?t=',
-              'key_search': 'No results'}},
+              'key_search': 'No results',
+              'domain': 'https://torrentproject.se'}},
             {'the_pirate_bay':
              {'page': 'https://proxyspotting.in/s/?q=',
-              'key_search': 'No hits'}},
+              'key_search': 'No hits',
+              'domain': 'https://proxyspotting.in'}},
             {'torrentz2':
              {'page': 'https://torrentz2.eu/search?f=',
               'key_search': 'did not match'}},
@@ -59,16 +61,20 @@ torrents = [{'torrent_project':
               'key_search': '<div id="pager_links"></div>'}},
             {'1337x':
              {'page': 'https://1337x.to/search/',
-              'key_search': 'No results were returned'}},
+              'key_search': 'No results were returned',
+              'domain': 'https://1337.to'}},
             {'eztv':
              {'page': 'https://eztv.ag/search/',
-              'key_search': 'It does not have any.'}},
+              'key_search': 'It does not have any.',
+              'domain': 'https://eztv.ag'}},
             {'limetorrents':
              {'page': 'https://www.limetorrents.cc/search/all/',
-              'key_search': 'No results found'}},
+              'key_search': 'No results found',
+              'domain': 'https://www.limetorrents.cc'}},
             {'isohunt':
              {'page': 'https://isohunt.to/torrents/?ihq=',
-              'key_search': 'No results found'}}]
+              'key_search': 'No results found',
+              'domain': 'https://isohunt.to'}}]
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 coloredlogs.install()
@@ -122,6 +128,7 @@ def download_torrent():
             # So, start download.
             print(1)
         else:
+            # Depending on page, if it is rated, start, else, search and start.
             print(1)
     except:
         logging.info('\nAn error has ocurred: \n')
@@ -130,7 +137,6 @@ def download_torrent():
 
 
 def build_table():
-    # TODO: In list mode, the components of the table are in elements.
     headers = ['Title', 'Seeders', 'Leechers', 'Age', 'Size']
     titles = []
     seeders = []
@@ -145,7 +151,7 @@ def build_table():
         ages = [span.get_text() for span in elements[3]]
         sizes = [span.get_text() for span in elements[4]]
 
-        domain = 'https://torrentproject.se'
+        # Torrent
         global hrefs
         hrefs = [domain + span.find(href=re.compile('torrent.html'))['href'] for span in elements[0]]
 
@@ -160,13 +166,58 @@ def build_table():
             ages.append(age)
             sizes.append(size)
 
-            domain = 'https://proxyspotting.in'
-            href = domain + elem.find('a', title=re.compile('magnet'))['href']
+            # Magnet
+            href = elem.find('a', title=re.compile('magnet'))['href']
             global hrefs
             hrefs.append(href)
 
         seeders = [elem.get_text() for elem in elements[1]]
         leechers = [elem.get_text() for elem in elements[2]]
+
+    elif page == '1337x':
+        titles = [elem.get_text() for elem in elements[0]]
+        seeders = [elem.get_text() for elem in elements[1]]
+        leechers = [elem.get_text() for elem in elements[2]]
+        ages = [elem.get_text() for elem in elements[3]]
+        sizes = [elem.get_text('|').split('|')[0] for elem in elements[4]]
+
+        # Torrent
+        global hrefs
+        hrefs = [domain + elem.find(href=re.compile('torrent'))['href'] for elem in elements[0]]
+
+    elif page == 'eztv':
+        titles = [elem.get_text() for elem in elements[0]]
+        seeders = [elem.get_text() for elem in elements[4]]
+        leechers = ['-' for elem in elements[4]]
+        ages = [elem.get_text() for elem in elements[3]]
+        sizes = [elem.get_text() for elem in elements[2]]
+
+        # Magnet
+        global hrefs
+        hrefs = [elem.find(href=re.compile('magnet'))['href'] for elem in elements[1]]
+
+    elif page == 'limetorrents':
+        titles = [elem.get_text() for elem in elements[0]]
+        seeders = [elem.get_text() for elem in elements[3]]
+        leechers = [elem.get_text() for elem in elements[4]]
+        ages = [elem.get_text() for elem in elements[1]]
+        sizes = [elem.get_text() for elem in elements[2]]
+
+        # Magnet
+        global hrefs
+        hrefs = [elem.find('a', href=re.compile('torrent'))['href'] for elem in elements[0]]
+    elif page == 'isohunt':
+        titles = [elem.get_text() for elem in elements[0]]
+        seeders = [elem.get_text() for elem in elements[5]]
+        leechers = ['-' for elem in elements[5]]
+        ages = [elem.get_text() for elem in elements[3]]
+        sizes = [elem.get_text() for elem in elements[4]]
+
+        # Torrent
+        global hrefs
+        hrefs = [domain + elem.find(href=re.compile('torrent_details'))['href'] for elem in elements[0]]
+    else:
+        print("Error page") # Handle
 
     global table
     table = [[Colors.BOLD + titles[i] + Colors.ENDC
@@ -184,7 +235,7 @@ def build_table():
               Colors.PURPLE + sizes[i] + Colors.ENDC
               if (i+1) % 2 == 0
               else Colors.LIGHTPURPLE + sizes[i] + Colors.ENDC]
-              for i in range(len(hrefs))]
+             for i in range(len(hrefs))]
 
     print(tabulate(table,
                    headers=headers,
@@ -202,34 +253,81 @@ def soupify():
     There are different ways for each page.
     """
     # TODO: Add search reference for each page.
-    soup = BeautifulSoup(content_page, 'lxml')
+    soup = BeautifulSoup(content_page.content, 'lxml')
     if page == 'torrent_project':
         main = soup.find('div', {'id': 'similarfiles'})
         if mode_search == 'rated':
             rated_url = main.find(href=re.compile('torrent.html'))['href']
-            domain = 'https://torrentproject.se'
             content_most_rated = requests.get(domain + rated_url)
-            rated_soup = BeautifulSoup(content_most_rated, 'lxml')
+            rated_soup = BeautifulSoup(content_most_rated.content, 'lxml')
             global magnet
             magnet = rated_soup.find('a', href=True, text=re.compile('Download'))['href']
         else:
             divs = main.find_all('div', limit=30)[1:]
             global elements
             elements = list(zip(*[d.find_all('span') for d in divs]))
+
     elif page == 'the_pirate_bay':
         main = soup.find('table', {'id': 'searchResult'})
-
         if mode_search == 'rated':
             rated_url = main.find('a', href=re.compile('torrent'))['href']
-            domain = 'https://proxyspotting.in'
             content_most_rated = requests.get(domain + rated_url)
-            rated_soup = BeautifulSoup(content_most_rated)
+            rated_soup = BeautifulSoup(content_most_rated.content, 'lxml')
             global magnet
             magnet = rated_soup.find('a', href=True, text=re.compile('Get this torrent'))['href']
         else:
-            trs = main.find('tbody').find_all('tr')
+            trs = main.find_all('tr', limit=30)[1:]
             global elements
             elements = list(zip(*[tr.find_all('td')[1:] for tr in trs]))
+
+    elif page == '1337x':
+        main = soup.find('table', {'class': 'table'})
+        if mode_search == 'rated':
+            rated_url = main.find('a', href=re.compile('torrent'))['href']
+            content_most_rated = requests.get(domain + rated_url)
+            rated_soup = BeautifulSoup(content_most_rated.content, 'lxml')
+            div1337 = rated_soup.find('div', {'class': 'torrent-category-detail'})
+            global magnet
+            magnet = div1337.find('a', href=re.compile('magnet'))['href']
+        else:
+            trs = main.find_all('tr', limit=30)[1:]
+            global elements
+            elements = list(zip(*([tr.find_all('td')[:-1] for tr in trs])))
+
+    elif page == 'eztv':
+        main = soup.find('table', {'class': 'forum_header_border'})
+        if mode_search == 'rated':
+            global magnet
+            magnet = main.find('a', {'class': 'magnet'})['href']
+        else:
+            trs = main.find_all('tr', limit=30)[2:]
+            global elements
+            elements = list(zip(*([tr.find_all('td')[1:-1] for tr in trs]))
+
+    elif page == 'limetorrents':
+        main = soup.find('table', {'class': 'table2'})
+        if mode_search == 'rated':
+            global magnet
+            magnet = main.find('a', href=re.compile('torrent'))['href']
+        else:
+            trs = main.find_all('tr', limit=30)[1:]
+            global elements
+            elements = list(zip(*([tr.find_all('td')[:-1] for tr in trs]))
+
+    elif page == 'isohunt':
+        main = soup.find('table', {'class': 'table'})
+        if mode_search == 'rated':
+            rated_url = main.find('a', href=re.compile('torrent_details'))['href']
+            content_most_rated = requests.get(domain + rated_url)
+            rated_soup = BeautifulSoup(content_most_rated.content, 'lxml')
+            global magnet
+            magnet = rated_soup.find('a', href=re.compile('magnet'))['href']
+        else:
+            trs = main.find_all('tr', limit=30)[1:-1]
+            global elements
+            elements = list(zip(*([tr.find_all('td')[1:-1] for tr in trs]))
+    else:
+        print("Error") # Handle error
 
 
 def select_torrent():
@@ -299,6 +397,8 @@ def insert():
     string_search = args.str_search
     global key_search
     key_search = torrents[args.torr_page]['key_search']
+    global domain
+    domain = torrents[args.torr_page]['domain']
 
 
 def initialize():
