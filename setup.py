@@ -11,7 +11,6 @@ from setuptools import setup
 
 here = path.abspath(path.dirname(__file__))
 
-# TODO: MODIFY - 'setup.py publish' shortcut.
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist bdist_wheel')
     os.system('twine upload dist/*')
@@ -61,5 +60,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development :: Torrent Download',
+        'Topic :: System :: Networking',
+        'Topic :: Terminals',
     ),
 )

@@ -34,7 +34,7 @@ from tabulate import tabulate
 
 MODES = ['best_rated', 'list']
 
-# NOTE: limetorrents and isohunt are down.
+# NOTE: isohunt is down.
 TORRENTS = [{'torrent_project':
              {'page': 'https://torrentproject.se/?t=',
               'key_search': 'No results',
@@ -66,11 +66,13 @@ TORRENTS = [{'torrent_project':
               'key_search': 'No results found',
               'domain': 'https://isohunt.to'}}]
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 coloredlogs.install()
 
 
 class Colors:
+    """Color class container."""
+
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -96,10 +98,12 @@ class Colors:
 
 class AutoPy:
     """AutoPy class for instance variables."""
+
     def __init__(self, args=None, content_page=None, found=False, hrefs=None,
                  magnet="", mode_search="", keep_search=True, key_search="",
                  page="", selected="", string_search="", elements=None,
                  table=None, torrent="", torrent_page="", domain=""):
+        """Args not entered will be defaulted."""
         self.args = args
         self.content_page = content_page
         self.found = found
@@ -118,9 +122,11 @@ class AutoPy:
         self.domain = domain
 
     def next_step(self):
-        print(1)
+        """Decide what will be continued."""
+        pass
 
     def open_magnet(self):
+        """Open magnet according to os."""
         if sys.platform.startswith('linux'):
             subprocess.Popen(['xdg-open', self.magnet],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -132,10 +138,11 @@ class AutoPy:
             subprocess.Popen(['open', self.magnet],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
-            os.startfile(self.magnet)
+            subprocess.Popen(['xdg-open', self.magnet],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_magnet(self, url):
-        """get magnet from torrent page. Url already got domain."""
+        """Get magnet from torrent page. Url already got domain."""
         content_most_rated = requests.get(url)
         rated_soup = BeautifulSoup(content_most_rated.content, 'lxml')
 
@@ -175,13 +182,12 @@ class AutoPy:
                 self.open_magnet()
             elif self.mode_search == 'list':
                 if self.selected is not None:
-                    # TODO: limetorrents is down.
                     if self.page in ['eztv', 'limetorrents']:
                         self.magnet = self.hrefs[int(self.selected)]
                         self.open_magnet()
-                    elif self.page in ['the_pirate_bay', 'torrent_project', '1337x', 'isohunt']:
-                        # torrent_project, the_pirate_bay and 1337x have magnet
-                        # inside page, isohunt is down.
+                    elif self.page in ['the_pirate_bay', 'torrent_project',
+                                       '1337x', 'isohunt']:
+                        # torr_proj, pirate and 1337x got  magnet inside.
                         url = self.hrefs[int(self.selected)]
                         self.get_magnet(url)
                         self.open_magnet()
@@ -196,6 +202,7 @@ class AutoPy:
             raise SystemExit()
 
     def build_table(self):
+        """Build table."""
         headers = ['Title', 'Seeders', 'Leechers', 'Age', 'Size']
         titles = []
         seeders = []
@@ -212,7 +219,8 @@ class AutoPy:
             sizes = [span.get_text() for span in self.elements[4]]
 
             # Torrents
-            self.hrefs = [self.domain + span.find(href=re.compile('torrent.html'))['href']
+            self.hrefs = [self.domain +
+                          span.find(href=re.compile('torrent.html'))['href']
                           for span in self.elements[0]]
 
         elif self.page == 'the_pirate_bay':
@@ -244,8 +252,8 @@ class AutoPy:
                      for elem in self.elements[4]]
 
             # Torrent
-            self.hrefs = [self.domain + elem.find(
-                        href=re.compile('torrent'))['href']
+            self.hrefs = [self.domain +
+                          elem.find(href=re.compile('torrent'))['href']
                           for elem in self.elements[0]]
 
         elif self.page == 'eztv':
@@ -278,7 +286,8 @@ class AutoPy:
             sizes = [elem.get_text() for elem in self.elements[4]]
 
             # Torrents
-            self.hrefs = [self.domain + elem.find(href=re.compile('torrent_details'))['href']
+            self.hrefs = [self.domain +
+                          elem.find(href=re.compile('torrent_details'))['href']
                           for elem in self.elements[0]]
         else:
             print('Error page')
@@ -379,7 +388,6 @@ class AutoPy:
                 self.elements = list(
                     zip(*([tr.find_all('td')[1:-1] for tr in trs])))  # Torrent
         else:
-            # Handle error
             logging.info('Cannot soupify current page. Try again.')
 
     def select_torrent(self):
@@ -396,10 +404,9 @@ class AutoPy:
             if not(self.found):
                 logging.info('No torrents found.')
                 return
-
-            self.soupify(self)
+            self.soupify()
             if self.mode_search != "rated":
-                self.build_table(self)
+                self.build_table()
                 logging.info('Select one of the following torrents.')
                 logging.info(
                     'Enter a number between: 0 and ' + len(self.hrefs))
