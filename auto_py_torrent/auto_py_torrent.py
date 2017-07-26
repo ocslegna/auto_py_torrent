@@ -32,10 +32,10 @@ from bs4 import UnicodeDammit
 from tabulate import tabulate
 
 
-MODES = ['best_rated', 'list']
+MODES = 'best_rated list'.split()
 
-# NOTE: isohunt is down.
-TORRENTS = [{'torrent_project':
+# NOTE: Use 0,1,4,5,6 and 7.
+TORRENTS = ({'torrent_project':
              {'page': 'https://torrentproject.se/?t=',
               'key_search': 'No results',
               'domain': 'https://torrentproject.se'}},
@@ -52,7 +52,7 @@ TORRENTS = [{'torrent_project':
             {'1337x':
              {'page': 'https://1337x.to/search/',
               'key_search': 'No results were returned',
-              'domain': 'https://1337.to'}},
+              'domain': 'https://1337x.to'}},
             {'eztv':
              {'page': 'https://eztv.ag/search/',
               'key_search': 'It does not have any.',
@@ -64,7 +64,7 @@ TORRENTS = [{'torrent_project':
             {'isohunt':
              {'page': 'https://isohunt.to/torrents/?ihq=',
               'key_search': 'No results found',
-              'domain': 'https://isohunt.to'}}]
+              'domain': 'https://isohunt.to'}})
 logging.basicConfig(level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
 coloredlogs.install()
@@ -96,13 +96,60 @@ class Colors:
     LEECHER = '\033[1m\033[31m'
 
 
+# Parse command line arguments. It parses argv into args variable.
+DESC = Colors.LIGHTBLUE + textwrap.dedent(
+    '''\
+    ------------------------------------
+    Tool for download a desired torrent.
+    ------------------------------------
+    ''') + Colors.ENDC
+USAGE_INFO = Colors.LIGHTGREEN + textwrap.dedent(
+    '''\
+
+
+    Use "python3 %(prog)s --help" for more information.
+    Examples:
+        use "python3 %(prog)s 0 0 "String search" # best rated.
+        use "python3 %(prog)s 1 0 "String search" # list rated.
+    ''') + Colors.ENDC
+EPI = Colors.LIGHTPURPLE + textwrap.dedent(
+    '''\
+
+    -> Thanks for using auto_py_torrent!
+    ''') + Colors.ENDC
+
+# Parent and only parser.
+PARSER = argparse.ArgumentParser(
+    add_help=True,
+    formatter_class=argparse.RawTextHelpFormatter,
+    usage=USAGE_INFO,
+    description=DESC,
+    epilog=EPI)
+PARSER.add_argument('mode', action='store',
+                    choices=range(len(MODES)),
+                    type=int,
+                    help='Select mode of torrent download.\n'
+                         '    e.g: 0 or 1')
+PARSER.add_argument('torr_page', action='store',
+                    choices=range(len(TORRENTS)),
+                    type=int,
+                    help='Select torrent page to download from.\n'
+                         '    e.g: 0 or 1 or .. N')
+PARSER.add_argument('str_search', action='store',
+                    type=str,
+                    help='Input torrent string to search.\n'
+                         '    e.g: "String search"')
+args = PARSER.parse_args()
+
+
 class AutoPy:
     """AutoPy class for instance variables."""
 
-    def __init__(self, args=None, content_page=None, found=False, hrefs=None,
-                 magnet="", mode_search="", keep_search=True, key_search="",
-                 page="", selected="", string_search="", elements=None,
-                 table=None, torrent="", torrent_page="", domain=""):
+    def __init__(self, args, string_search, mode_search,
+                 page, key_search, torrent_page, domain,
+                 content_page=None, found=False, hrefs=None,
+                 magnet="", keep_search=True, selected="",
+                 elements=None, table=None, torrent=""):
         """Args not entered will be defaulted."""
         self.args = args
         self.content_page = content_page
@@ -120,6 +167,13 @@ class AutoPy:
         self.torrent = torrent
         self.torrent_page = torrent_page
         self.domain = domain
+        print('args: ' + str(self.args) +
+              '\nstring_search: ' + str(self.string_search) +
+              '\nmode_search: ' + str(self.mode_search) +
+              '\npage: ' + str(page) +
+              '\nkey_search: ' + str(key_search) +
+              '\ntorrent_page: ' + str(self.torrent_page) +
+              '\ndomain: ' + str(domain))
 
     def next_step(self):
         """Decide what will be continued."""
@@ -170,7 +224,7 @@ class AutoPy:
     def download_torrent(self):
         """Download torrent.
 
-        Rated implies download  the unique best rated torrent found.
+        Rated implies download the unique best rated torrent found.
         Otherwise: download the selected torrent.
         """
         try:
@@ -178,7 +232,7 @@ class AutoPy:
                 logging.info('Nothing found.')
                 return
 
-            if self.mode_search == 'rated':
+            if self.mode_search == 'best_rated':
                 self.open_magnet()
             elif self.mode_search == 'list':
                 if self.selected is not None:
@@ -326,7 +380,7 @@ class AutoPy:
         soup = BeautifulSoup(self.content_page.content, 'lxml')
         if self.page == 'torrent_project':
             main = soup.find('div', {'id': 'similarfiles'})
-            if self.mode_search == 'rated':
+            if self.mode_search == 'best_rated':
                 rated_url = self.domain + \
                     main.find(href=re.compile('torrent.html'))['href']
                 self.get_magnet(rated_url)
@@ -337,7 +391,7 @@ class AutoPy:
 
         elif self.page == 'the_pirate_bay':
             main = soup.find('table', {'id': 'searchResult'})
-            if self.mode_search == 'rated':
+            if self.mode_search == 'best_rated':
                 rated_url = self.domain + \
                     main.find('a', href=re.compile('torrent'))['href']
                 self.get_magnet(rated_url)
@@ -348,7 +402,7 @@ class AutoPy:
 
         elif self.page == '1337x':
             main = soup.find('table', {'class': 'table'})
-            if self.mode_search == 'rated':
+            if self.mode_search == 'best_rated':
                 rated_url = self.domain + \
                     main.find('a', href=re.compile('torrent'))['href']
                 self.get_magnet(rated_url)
@@ -358,9 +412,9 @@ class AutoPy:
                     zip(*([tr.find_all('td')[:-1] for tr in trs])))  # Torrents
 
         elif self.page == 'eztv':
-            main = soup.find('table', {'class': 'forum_header_border'})
-            if self.mode_search == 'rated':
-                self.magnet = main.find('a', {'class': 'magnet'})['href']
+            main = soup.find_all('table', {'class': 'forum_header_border'})[2]
+            if self.mode_search == 'best_rated':
+                self.magnet = main.find('a', href=re.compile('magnet'))['href']
             else:
                 trs = main.find_all('tr', limit=30)[2:]
                 self.elements = list(
@@ -368,7 +422,7 @@ class AutoPy:
 
         elif self.page == 'limetorrents':
             main = soup.find('table', {'class': 'table2'})
-            if self.mode_search == 'rated':
+            if self.mode_search == 'best_rated':
                 self.magnet = main.find(
                     'a', href=re.compile('torrent'))['href']
             else:
@@ -378,7 +432,7 @@ class AutoPy:
 
         elif self.page == 'isohunt':
             main = soup.find('table', {'class': 'table'})
-            if self.mode_search == 'rated':
+            if self.mode_search == 'best_rated':
                 rated_url = self.domain + \
                     main.find('a', href=re.compile(
                         'torrent_details'))['href']
@@ -405,12 +459,15 @@ class AutoPy:
                 logging.info('No torrents found.')
                 return
             self.soupify()
-            if self.mode_search != "rated":
+            if self.mode_search == 'best_rated':
+                print('\nMagnet for best_rated test: \n\n' + self.magnet)
+
+            if self.mode_search != 'best_rated':
                 self.build_table()
                 logging.info('Select one of the following torrents.')
                 logging.info(
                     'Enter a number between: 0 and ' + len(self.hrefs))
-                logging.info('If you want to exit write "Q".')
+                logging.info('If you want to exit write "Q" or "q".')
                 self.selected = input('>> ')
                 if self.selected in ['Q', 'q']:
                     logging.info('\nGood bye!')
@@ -443,85 +500,41 @@ class AutoPy:
     def get_content(self):
         """Get content of the page through url."""
         url = self.build_url()
+        print('\nUrl: ' + url + '\n')
         try:
             self.content_page = requests.get(url)
         except requests.exceptions.RequestException as e:
-            logging.info('\nAn error has ocurred: \n' + str(e))
+            logging.info('\nA requests exception has ocurred: \n' + str(e))
             logging.error(traceback.format_exc())
             raise SystemExit()
 
 
-def insert(args):
+def insert():
     """Insert args values into instance variables."""
-    page = list(TORRENTS[args.torr_page].keys())[0]
-    mode_search = MODES[args.mode]
-    torrent_page = TORRENTS[args.torr_page]['page']
     string_search = args.str_search
-    key_search = TORRENTS[args.torr_page]['key_search']
-    domain = TORRENTS[args.torr_page]['domain']
-    return([page, mode_search, torrent_page,
-            string_search, key_search, domain])
+    mode_search = MODES[args.mode]
+    page = list(TORRENTS[args.torr_page].keys())[0]
+    key_search = TORRENTS[args.torr_page][page]['key_search']
+    torrent_page = TORRENTS[args.torr_page][page]['page']
+    domain = TORRENTS[args.torr_page][page]['domain']
+    return([args, string_search, mode_search, page,
+            key_search, torrent_page, domain])
 
 
 def initialize():
     """Initialize script."""
-    print("Welcome to auto_py_torrent!")
-
-
-def parse():
-    """Parse command line arguments. It parses argv into args variable."""
-    desc = textwrap.dedent(
-        '''\
-        ------------------------------------
-        Tool for download a desired torrent.
-        ------------------------------------
-        ''')
-    usage_info = textwrap.dedent(
-        '''\
-        use "python %(prog)s --help" for more information.
-        Examples:
-          use "python %(prog)s 0 0 "String search" # best rated.
-          use "python %(prog)s 1 0 "String search" # list rated.
-        ''')
-    epi = textwrap.dedent(
-        '''\
-        ___
-        -> Thanks for using auto_py_torrent!
-        ''')
-
-    # Parent and only parser.
-    parser = argparse.ArgumentParser(
-        add_help=True,
-        formatter_class=argparse.RawTextHelpFormatter,
-        usage=usage_info,
-        description=desc,
-        epilog=epi)
-    parser.add_argument('mode', action='store',
-                        choices=range(len(MODES)),
-                        type=int,
-                        help='Select mode of torrent download.\n'
-                             'e.g: 0 or 1')
-    parser.add_argument('torr_page', action='store',
-                        choices=range(len(TORRENTS)),
-                        type=int,
-                        help='Select torrent page to download from.\n'
-                             'e.g: 0 or 1 or .. N')
-    parser.add_argument('str_search', action='store',
-                        type=str,
-                        help='Input torrent string to search.\n'
-                             'e.g: "String search"')
-    return(parser.parse_args())
+    print("Welcome to auto_py_torrent!\n")
 
 
 def run_it():
     """Search and download torrents until the user says it so."""
     initialize()
-    args = parse()  # TODO: Parse input as ARGS.
-    auto = AutoPy(*insert(args))
+    auto = AutoPy(*insert())
     while(auto.keep_search):
         auto.get_content()
         auto.select_torrent()
         auto.download_torrent()
+        raise SystemExit(0)
         auto.next_step()
 
 
@@ -531,7 +544,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\nSee you the next time.')
     except:
-        print("\nAn error has ocurred: \n")
-        logging.debug(traceback.format_exc())
+        print("\nAn error has ocurred:")
+        logging.error(traceback.format_exc())
     finally:
         logging.info("Good bye!")
