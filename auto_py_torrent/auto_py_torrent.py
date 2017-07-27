@@ -86,8 +86,9 @@ class Colors:
     GREEN = '\033[42m'
     CYAN = '\033[36m'
     RED = '\033[41m'
+    PINK = '\033[95m'
     PURPLE = '\033[35m'
-    LIGHTBLUE = '\033[0m\033[34m'
+    LIGHTBLUE = '\033[94m'
     LIGHTGREEN = '\033[0m\033[32m'
     LIGHTCYAN = '\033[0m\033[36m'
     LIGHTRED = '\033[0m\033[31m'
@@ -142,6 +143,15 @@ PARSER.add_argument('str_search', action='store',
 args = PARSER.parse_args()
 
 
+def is_num(var):
+    """Check if var is num."""
+    try:
+        value = int(var)
+        return True
+    except TypeError:
+        return False
+
+
 class AutoPy:
     """AutoPy class for instance variables."""
 
@@ -167,13 +177,6 @@ class AutoPy:
         self.torrent = torrent
         self.torrent_page = torrent_page
         self.domain = domain
-        print('args: ' + str(self.args) +
-              '\nstring_search: ' + str(self.string_search) +
-              '\nmode_search: ' + str(self.mode_search) +
-              '\npage: ' + str(page) +
-              '\nkey_search: ' + str(key_search) +
-              '\ntorrent_page: ' + str(self.torrent_page) +
-              '\ndomain: ' + str(domain))
 
     def next_step(self):
         """Decide what will be continued."""
@@ -218,42 +221,43 @@ class AutoPy:
                 'a', href=re.compile('magnet'))['href']
 
         else:
-            logging.info('Wrong page to get magnet!')
-            raise SystemExit()
+            print('Wrong page to get magnet!')
+            sys.exit(1)
 
     def download_torrent(self):
         """Download torrent.
 
         Rated implies download the unique best rated torrent found.
-        Otherwise: download the selected torrent.
+        Otherwise: get the magnet and download it.
         """
         try:
             if not(self.found):
-                logging.info('Nothing found.')
+                print('Nothing found.')
                 return
-
             if self.mode_search == 'best_rated':
                 self.open_magnet()
             elif self.mode_search == 'list':
                 if self.selected is not None:
+                    # t_p, pirate and 1337x got magnet inside, else direct.
                     if self.page in ['eztv', 'limetorrents']:
                         self.magnet = self.hrefs[int(self.selected)]
                         self.open_magnet()
-                    elif self.page in ['the_pirate_bay', 'torrent_project',
-                                       '1337x', 'isohunt']:
-                        # torr_proj, pirate and 1337x got  magnet inside.
+                    elif self.page in ['the_pirate_bay',
+                                       'torrent_project',
+                                       '1337x',
+                                       'isohunt']:
                         url = self.hrefs[int(self.selected)]
                         self.get_magnet(url)
                         self.open_magnet()
                     else:
                         print('Bad selected page.')
                 else:
-                    logging.info('Nothing selected.')
-                    raise SystemExit()
+                    print('Nothing selected.')
+                    sys.exit(1)
         except:
-            logging.info('\nAn error has ocurred: \n')
-            logging.error(traceback.format_exc())
-            raise SystemExit()
+            print('An error has ocurred:')
+            print(traceback.format_exc())
+            sys.exit(0)
 
     def build_table(self):
         """Build table."""
@@ -265,8 +269,9 @@ class AutoPy:
         sizes = []
 
         if self.page == 'torrent_project':
-            titles = [span.find('a').get_text()
+            titles = [list(span.find('a').stripped_strings)[0]
                       for span in self.elements[0]]
+
             seeders = [span.get_text() for span in self.elements[1]]
             leechers = [span.get_text() for span in self.elements[2]]
             ages = [span.get_text() for span in self.elements[3]]
@@ -274,7 +279,7 @@ class AutoPy:
 
             # Torrents
             self.hrefs = [self.domain +
-                          span.find(href=re.compile('torrent.html'))['href']
+                          span.find('a')['href']
                           for span in self.elements[0]]
 
         elif self.page == 'the_pirate_bay':
@@ -346,26 +351,26 @@ class AutoPy:
         else:
             print('Error page')
 
-        self.table = [[Colors.BOLD + titles[i] + Colors.ENDC
+        self.table = [[Colors.BOLD + titles[i][:75].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else titles[i],
-                       Colors.SEEDER + seeders[i] + Colors.ENDC
+                       else titles[i][:75].strip(),
+                       Colors.SEEDER + seeders[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else Colors.LIGHTGREEN + seeders[i] + Colors.ENDC,
-                       Colors.LEECHER + leechers[i] + Colors.ENDC
+                       else Colors.LIGHTGREEN + seeders[i].strip() + Colors.ENDC,
+                       Colors.LEECHER + leechers[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else Colors.LIGHTRED + leechers[i] + Colors.ENDC,
-                       Colors.BLUE + ages[i] + Colors.ENDC
+                       else Colors.LIGHTRED + leechers[i].strip() + Colors.ENDC,
+                       Colors.LIGHTBLUE + ages[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else Colors.LIGHTBLUE + ages[i] + Colors.ENDC,
-                       Colors.PURPLE + sizes[i] + Colors.ENDC
+                       else Colors.BLUE + ages[i].strip() + Colors.ENDC,
+                       Colors.PINK + sizes[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else Colors.LIGHTPURPLE + sizes[i] + Colors.ENDC]
+                       else Colors.PURPLE + sizes[i].strip() + Colors.ENDC]
                       for i in range(len(self.hrefs))]
 
         print(tabulate(self.table,
                        headers=headers,
-                       tablefmt='fancy_grid',
+                       tablefmt='psql',
                        numalign='right',
                        stralign='left',
                        showindex=True))
@@ -385,9 +390,10 @@ class AutoPy:
                     main.find(href=re.compile('torrent.html'))['href']
                 self.get_magnet(rated_url)
             else:
-                divs = main.find_all('div', limit=30)[1:]
+                divs = main.find_all('div', limit=30)[2:]
                 self.elements = list(
-                    zip(*[d.find_all('span') for d in divs]))  # Torrents
+                    zip(*[d.find_all('span', recursive=False)
+                          for d in divs]))  # Torrents
 
         elif self.page == 'the_pirate_bay':
             main = soup.find('table', {'id': 'searchResult'})
@@ -398,7 +404,8 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[1:]
                 self.elements = list(
-                    zip(*[tr.find_all('td')[1:] for tr in trs]))  # Magnets
+                    zip(*[tr.find_all('td', recursive=False)[1:]
+                          for tr in trs]))  # Magnets
 
         elif self.page == '1337x':
             main = soup.find('table', {'class': 'table'})
@@ -409,7 +416,8 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[1:]
                 self.elements = list(
-                    zip(*([tr.find_all('td')[:-1] for tr in trs])))  # Torrents
+                    zip(*([tr.find_all('td', recursive=False)[:-1]
+                           for tr in trs])))  # Torrents
 
         elif self.page == 'eztv':
             main = soup.find_all('table', {'class': 'forum_header_border'})[2]
@@ -418,7 +426,7 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[2:]
                 self.elements = list(
-                    zip(*([tr.find_all('td')[1:-1] for tr in trs])))  # Magnets
+                    zip(*([tr.find_all('td', recursive=False)[1:-1] for tr in trs])))  # Magnets
 
         elif self.page == 'limetorrents':
             main = soup.find('table', {'class': 'table2'})
@@ -428,7 +436,7 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[1:]
                 self.elements = list(
-                    zip(*([tr.find_all('td')[:-1] for tr in trs])))  # Magnets
+                    zip(*([tr.find_all('td', recursive=False)[:-1] for tr in trs])))  # Magnets
 
         elif self.page == 'isohunt':
             main = soup.find('table', {'class': 'table'})
@@ -440,9 +448,27 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[1:-1]
                 self.elements = list(
-                    zip(*([tr.find_all('td')[1:-1] for tr in trs])))  # Torrent
+                    zip(*([tr.find_all('td', recursive=False)[1:-1]
+                           for tr in trs])))  # Torrent
         else:
-            logging.info('Cannot soupify current page. Try again.')
+            print('Cannot soupify current page. Try again.')
+
+    def handle_select(self):
+        """Handles user's input in list mode."""
+        self.selected = input('>> ')
+        if self.selected in ['Q', 'q']:
+            sys.exit(1)
+        elif is_num(self.selected):
+            if 0 <= int(self.selected) <= len(self.hrefs):
+                return True
+            else:
+                print(Colors.LIGHTRED +
+                      'Wrong index. Please select an appropiate one.' +
+                      Colors.ENDC)
+                return False
+        else:
+            print('Invalid input. Please select an appropiate one.')
+            return False
 
     def select_torrent(self):
         """Select torrent.
@@ -453,35 +479,23 @@ class AutoPy:
         Else: build table with all data and enable the user select the torrent.
         """
         try:
-            self.found = bool(self.key_search not in self.content_page)
-
-            if not(self.found):
-                logging.info('No torrents found.')
-                return
+            self.found = bool(self.key_search in self.content_page.text)
+            if self.found:
+                print('No torrents found.')
+                sys.exit(1)
             self.soupify()
-            if self.mode_search == 'best_rated':
-                print('\nMagnet for best_rated test: \n\n' + self.magnet)
-
-            if self.mode_search != 'best_rated':
+            if self.mode_search == 'list':
                 self.build_table()
-                logging.info('Select one of the following torrents.')
-                logging.info(
-                    'Enter a number between: 0 and ' + len(self.hrefs))
-                logging.info('If you want to exit write "Q" or "q".')
-                self.selected = input('>> ')
-                if self.selected in ['Q', 'q']:
-                    logging.info('\nGood bye!')
-                    raise SystemExit()
-                elif 0 <= int(self.selected) <= len(self.hrefs):
-                    pass
-                else:
-                    logging.info('Wrong index.')
-                    self.selected = None
-
-        except:
-            logging.info('\nAn error has ocurred: \n')
+                print('\nSelect one of the following torrents. ' +
+                      'Enter a number between: 0 and ' + str(len(self.hrefs)))
+                print('If you want to exit write "Q" or "q".')
+                selected = False
+                while not(selected):
+                    selected = self.handle_select()
+        except Exception:
+            print('ERROR select_torrent: ')
             logging.error(traceback.format_exc())
-            raise SystemExit()
+            sys.exit(0)
 
     def build_url(self):
         """Build appropiate encoded URL.
@@ -500,13 +514,12 @@ class AutoPy:
     def get_content(self):
         """Get content of the page through url."""
         url = self.build_url()
-        print('\nUrl: ' + url + '\n')
         try:
             self.content_page = requests.get(url)
         except requests.exceptions.RequestException as e:
-            logging.info('\nA requests exception has ocurred: \n' + str(e))
+            logging.info('A requests exception has ocurred: ' + str(e))
             logging.error(traceback.format_exc())
-            raise SystemExit()
+            sys.exit(0)
 
 
 def insert():
@@ -533,8 +546,8 @@ def run_it():
     while(auto.keep_search):
         auto.get_content()
         auto.select_torrent()
-        auto.download_torrent()
         raise SystemExit(0)
+        auto.download_torrent()
         auto.next_step()
 
 
@@ -543,8 +556,7 @@ if __name__ == '__main__':
         run_it()
     except KeyboardInterrupt:
         print('\nSee you the next time.')
-    except:
-        print("\nAn error has ocurred:")
+    except Exception:
         logging.error(traceback.format_exc())
     finally:
-        logging.info("Good bye!")
+        print("Good bye!")
