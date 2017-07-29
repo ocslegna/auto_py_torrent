@@ -31,7 +31,6 @@ with open(os.path.join(here, 'auto_py_torrent', '__version__.py'), 'r', 'utf-8')
 
 with open('README.rst', 'r', 'utf-8') as f:
     readme = f.read()
-
 with open('HISTORY.rst', 'r', 'utf-8') as f:
     history = f.read()
 
