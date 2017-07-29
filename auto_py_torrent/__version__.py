@@ -10,7 +10,7 @@
 __title__ = 'auto_py_torrent'
 __description__ = 'Easy and automated tool for torrent downloading'
 __url__ = 'https://github.com/ocslegna/auto_py_torrent'
-__version__ = '0.0.1'
+__version__ = '1.0.0'
 __build__ = 0x000001
 __author__ = 'Gabriel Scotillo'
 __author_email__ = 'gabrielscotillo@gmail.com'
