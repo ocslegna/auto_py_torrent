@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-
 import os
-import re
 import sys
 
+from codecs import open
 
 from setuptools import setup
 
 
-here = path.abspath(path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist bdist_wheel')
@@ -46,6 +45,7 @@ setup(
     author_email=about['__author_email__'],
     url=about['__url__'],
     packages=packages,
+    python_requires='>=3',
     install_requires=requires,
     license=about['__license__'],
     classifiers=(
@@ -53,15 +53,14 @@ setup(
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'License :: GNU General Public License v3.0',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Topic :: Software Development :: Torrent Download',
-        'Topic :: System :: Networking',
         'Topic :: Terminals',
     ),
+    keywords='automate torrent torrent downloads'
 )
