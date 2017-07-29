@@ -472,13 +472,13 @@ class AutoPy:
             else:
                 print(Colors.FAIL +
                       'Wrong index. ' +
-                      'Please select an appropiate one or other  option.' +
+                      'Please select an appropiate one or other option.' +
                       Colors.ENDC)
                 return False
         else:
             print(Colors.FAIL +
                   'Invalid input. ' +
-                  'Please select an appropiate one or other option' +
+                  'Please select an appropiate one or other option.' +
                   Colors.ENDC)
             return False
 
@@ -500,7 +500,7 @@ class AutoPy:
             if self.mode_search == 'list':
                 self.build_table()
                 print('\nSelect one of the following torrents. ' +
-                      'Enter a number between: 0 and ' + str(len(self.hrefs)))
+                      'Enter a number between: 0 and ' + str(len(self.hrefs) - 1))
                 print('If you want to exit write "Q" or "q".')
                 print('If you want to go back to menu write "B" or "b".')
                 while not(self.picked_choice):
@@ -578,7 +578,8 @@ def run_it():
             auto.download_torrent()
 
 
-if __name__ == '__main__':
+def main():
+    """Entry point for app script."""
     try:
         run_it()
     except KeyboardInterrupt:
@@ -587,3 +588,7 @@ if __name__ == '__main__':
         logging.error(traceback.format_exc())
     finally:
         print("Good bye!")
+
+
+if __name__ == '__main__':
+    main()

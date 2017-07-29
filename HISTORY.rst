@@ -6,6 +6,26 @@ Release History
 Development
 +++++++++++
 
+1.0.3 (2017-07-28)
+++++++++++++++++++
+
+* Minor. 
+
+**Bugfixes**
+
+- Fix the select index of provided list. 
+
+
+1.0.2 (2017-07-28)
+++++++++++++++++++
+
+* pip3 install integration. 
+
+**Improvements**
+
+- Provide install with pip3: ``sudo pip3 install auto_py_torrent``.
+
+
 1.0.0 (2017-07-28)
 ++++++++++++++++++
 
@@ -25,9 +45,9 @@ Development
 - Fix poor decision making after found content. 
 - Handle bad requests.
 
+
 0.0.2 (2017-07-26)
 ++++++++++++++++++
-
 
 * First alpha tests.
 

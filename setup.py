@@ -62,5 +62,8 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Topic :: Terminals',
     ),
-    keywords='automate torrent torrent downloads'
+    keywords='automate torrent torrent downloads',
+    entry_points = {
+        'console_scripts': ['auto_py_torrent=auto_py_torrent.auto_py_torrent:main'],
+    }
 )
