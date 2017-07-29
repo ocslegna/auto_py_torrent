@@ -6,7 +6,7 @@ Release History
 Development
 +++++++++++
 
-1.0.0 (2017-007-26)
+1.0.0 (2017-007-28)
 ++++++++++++++++++
 
 * First launch! Gone live.
