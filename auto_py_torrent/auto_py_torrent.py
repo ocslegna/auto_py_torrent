@@ -180,9 +180,6 @@ class AutoPy:
         self.torrent = ""
         self.torrent_page = torrent_page
 
-    def next_step(self):
-        """Decide what will be continued."""
-        pass
 
     def open_magnet(self):
         """Open magnet according to os."""
