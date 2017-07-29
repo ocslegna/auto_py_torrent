@@ -34,7 +34,13 @@ from tabulate import tabulate
 
 MODES = 'best_rated list'.split()
 
-# NOTE: Use 0,1,4,5,6 and 7.
+# {'torrentz2':
+#  {'page': 'https://torrentz2.eu/search?f=',
+#   'key_search': 'did not match'}},
+# {'rarbg':
+#  {'page': 'https://rarbg.to/torrents.php?search=',
+#   'key_search': '<div id="pager_links"></div>'}},
+
 TORRENTS = ({'torrent_project':
              {'page': 'https://torrentproject.se/?t=',
               'key_search': 'No results',
@@ -43,12 +49,6 @@ TORRENTS = ({'torrent_project':
              {'page': 'https://proxyspotting.in/s/?q=',
               'key_search': 'No hits',
               'domain': 'https://proxyspotting.in'}},
-            {'torrentz2':
-             {'page': 'https://torrentz2.eu/search?f=',
-              'key_search': 'did not match'}},
-            {'rarbg':
-             {'page': 'https://rarbg.to/torrents.php?search=',
-              'key_search': '<div id="pager_links"></div>'}},
             {'1337x':
              {'page': 'https://1337x.to/search/',
               'key_search': 'No results were returned',
@@ -89,66 +89,69 @@ class Colors:
     PINK = '\033[95m'
     PURPLE = '\033[35m'
     LIGHTBLUE = '\033[94m'
-    LIGHTGREEN = '\033[0m\033[32m'
+    LGREEN = '\033[0m\033[32m'
     LIGHTCYAN = '\033[0m\033[36m'
-    LIGHTRED = '\033[0m\033[31m'
+    LRED = '\033[0m\033[31m'
     LIGHTPURPLE = '\033[0m\033[35m'
     SEEDER = '\033[1m\033[32m'
     LEECHER = '\033[1m\033[31m'
 
 
-# Parse command line arguments. It parses argv into args variable.
-DESC = Colors.LIGHTBLUE + textwrap.dedent(
-    '''\
-    ------------------------------------
-    Tool for download a desired torrent.
-    ------------------------------------
-    ''') + Colors.ENDC
-USAGE_INFO = Colors.LIGHTGREEN + textwrap.dedent(
-    '''\
+def get_parser():
+    """Load parser for command line arguments.
+
+    It parses argv/input into args variable.
+    """
+    desc = Colors.LIGHTBLUE + textwrap.dedent(
+        '''\
+        ------------------------------------
+        Tool for download a desired torrent.
+        ------------------------------------
+        ''') + Colors.ENDC
+    usage_info = Colors.LGREEN + textwrap.dedent(
+        '''\
 
 
-    Use "python3 %(prog)s --help" for more information.
-    Examples:
-        use "python3 %(prog)s 0 0 "String search" # best rated.
-        use "python3 %(prog)s 1 0 "String search" # list rated.
-    ''') + Colors.ENDC
-EPI = Colors.LIGHTPURPLE + textwrap.dedent(
-    '''\
+        Use "python3 %(prog)s --help" for more information.
+        Examples:
+            use "python3 %(prog)s 0 0 "String search" # best rated.
+            use "python3 %(prog)s 1 0 "String search" # list rated.
+        ''') + Colors.ENDC
+    epi = Colors.LIGHTPURPLE + textwrap.dedent(
+        '''\
 
-    -> Thanks for using auto_py_torrent!
-    ''') + Colors.ENDC
+        -> Thanks for using auto_py_torrent!
+        ''') + Colors.ENDC
 
-# Parent and only parser.
-PARSER = argparse.ArgumentParser(
-    add_help=True,
-    formatter_class=argparse.RawTextHelpFormatter,
-    usage=USAGE_INFO,
-    description=DESC,
-    epilog=EPI)
-PARSER.add_argument('mode', action='store',
-                    choices=range(len(MODES)),
-                    type=int,
-                    help='Select mode of torrent download.\n'
-                         '    e.g: 0 or 1')
-PARSER.add_argument('torr_page', action='store',
-                    choices=range(len(TORRENTS)),
-                    type=int,
-                    help='Select torrent page to download from.\n'
-                         '    e.g: 0 or 1 or .. N')
-PARSER.add_argument('str_search', action='store',
-                    type=str,
-                    help='Input torrent string to search.\n'
-                         '    e.g: "String search"')
-args = PARSER.parse_args()
+    # Parent and only parser.
+    parser = argparse.ArgumentParser(
+        add_help=True,
+        formatter_class=argparse.RawTextHelpFormatter,
+        usage=usage_info,
+        description=desc,
+        epilog=epi)
+    parser.add_argument('mode', action='store',
+                        choices=range(len(MODES)),
+                        type=int,
+                        help='Select mode of torrent download.\n'
+                             '    e.g: 0 or 1')
+    parser.add_argument('torr_page', action='store',
+                        choices=range(len(TORRENTS)),
+                        type=int,
+                        help='Select torrent page to download from.\n'
+                             '    e.g: 0 or 1 or .. N')
+    parser.add_argument('str_search', action='store',
+                        type=str,
+                        help='Input torrent string to search.\n'
+                             '    e.g: "String search"')
+    return(parser)
 
 
 def is_num(var):
     """Check if var is num."""
     try:
-        value = int(var)
-        return True
-    except TypeError:
+        return(isinstance(var, int))
+    except Exception:
         return False
 
 
@@ -156,27 +159,26 @@ class AutoPy:
     """AutoPy class for instance variables."""
 
     def __init__(self, args, string_search, mode_search,
-                 page, key_search, torrent_page, domain,
-                 content_page=None, found=False, hrefs=None,
-                 magnet="", keep_search=True, selected="",
-                 elements=None, table=None, torrent=""):
+                 page, key_search, torrent_page, domain):
         """Args not entered will be defaulted."""
         self.args = args
-        self.content_page = content_page
-        self.found = found
-        self.hrefs = hrefs
-        self.magnet = magnet
-        self.mode_search = mode_search
-        self.keep_search = keep_search
-        self.key_search = key_search
-        self.page = page
-        self.selected = selected
-        self.string_search = string_search
-        self.elements = elements
-        self.table = table
-        self.torrent = torrent
-        self.torrent_page = torrent_page
+        self.back_to_menu = False
+        self.content_page = None
         self.domain = domain
+        self.elements = None
+        self.found_torrents = False
+        self.hrefs = []
+        self.keep_search = True
+        self.key_search = key_search
+        self.magnet = ""
+        self.mode_search = mode_search
+        self.page = page
+        self.picked_choice = False
+        self.selected = ""
+        self.string_search = string_search
+        self.table = None
+        self.torrent = ""
+        self.torrent_page = torrent_page
 
     def next_step(self):
         """Decide what will be continued."""
@@ -231,7 +233,9 @@ class AutoPy:
         Otherwise: get the magnet and download it.
         """
         try:
-            if not(self.found):
+            if self.back_to_menu is True:
+                return
+            if self.found_torrents is False:
                 print('Nothing found.')
                 return
             if self.mode_search == 'best_rated':
@@ -254,8 +258,7 @@ class AutoPy:
                 else:
                     print('Nothing selected.')
                     sys.exit(1)
-        except:
-            print('An error has ocurred:')
+        except Exception:
             print(traceback.format_exc())
             sys.exit(0)
 
@@ -293,11 +296,10 @@ class AutoPy:
                 age, size = dammit.unicode_markup.split(',')[:-1]
                 ages.append(age)
                 sizes.append(size)
-
-                # Torrents
+                # Torrent
                 href = self.domain + \
                     elem.find('a', title=re.compile('magnet'))['href']
-                self.hrefs.append(href)
+                self.hrefs.append(str(href))
 
             seeders = [elem.get_text() for elem in self.elements[1]]
             leechers = [elem.get_text() for elem in self.elements[2]]
@@ -356,10 +358,10 @@ class AutoPy:
                        else titles[i][:75].strip(),
                        Colors.SEEDER + seeders[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else Colors.LIGHTGREEN + seeders[i].strip() + Colors.ENDC,
+                       else Colors.LGREEN + seeders[i].strip() + Colors.ENDC,
                        Colors.LEECHER + leechers[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else Colors.LIGHTRED + leechers[i].strip() + Colors.ENDC,
+                       else Colors.LRED + leechers[i].strip() + Colors.ENDC,
                        Colors.LIGHTBLUE + ages[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
                        else Colors.BLUE + ages[i].strip() + Colors.ENDC,
@@ -426,7 +428,8 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[2:]
                 self.elements = list(
-                    zip(*([tr.find_all('td', recursive=False)[1:-1] for tr in trs])))  # Magnets
+                    zip(*([tr.find_all('td', recursive=False)[1:-1]
+                           for tr in trs])))  # Magnets
 
         elif self.page == 'limetorrents':
             main = soup.find('table', {'class': 'table2'})
@@ -436,7 +439,8 @@ class AutoPy:
             else:
                 trs = main.find_all('tr', limit=30)[1:]
                 self.elements = list(
-                    zip(*([tr.find_all('td', recursive=False)[:-1] for tr in trs])))  # Magnets
+                    zip(*([tr.find_all('td', recursive=False)[:-1]
+                           for tr in trs])))  # Magnets
 
         elif self.page == 'isohunt':
             main = soup.find('table', {'class': 'table'})
@@ -454,20 +458,28 @@ class AutoPy:
             print('Cannot soupify current page. Try again.')
 
     def handle_select(self):
-        """Handles user's input in list mode."""
+        """Handle user's input in list mode."""
         self.selected = input('>> ')
         if self.selected in ['Q', 'q']:
             sys.exit(1)
+        elif self.selected in ['B', 'b']:
+            self.back_to_menu = True
+            return True
         elif is_num(self.selected):
             if 0 <= int(self.selected) <= len(self.hrefs):
+                self.back_to_menu = False
                 return True
             else:
-                print(Colors.LIGHTRED +
-                      'Wrong index. Please select an appropiate one.' +
+                print(Colors.FAIL +
+                      'Wrong index. ' +
+                      'Please select an appropiate one or other  option.' +
                       Colors.ENDC)
                 return False
         else:
-            print('Invalid input. Please select an appropiate one.')
+            print(Colors.FAIL +
+                  'Invalid input. ' +
+                  'Please select an appropiate one or other option' +
+                  Colors.ENDC)
             return False
 
     def select_torrent(self):
@@ -479,8 +491,9 @@ class AutoPy:
         Else: build table with all data and enable the user select the torrent.
         """
         try:
-            self.found = bool(self.key_search in self.content_page.text)
-            if self.found:
+            self.found_torrents = not bool(self.key_search in
+                                           self.content_page.text)
+            if not self.found_torrents:
                 print('No torrents found.')
                 sys.exit(1)
             self.soupify()
@@ -489,9 +502,9 @@ class AutoPy:
                 print('\nSelect one of the following torrents. ' +
                       'Enter a number between: 0 and ' + str(len(self.hrefs)))
                 print('If you want to exit write "Q" or "q".')
-                selected = False
-                while not(selected):
-                    selected = self.handle_select()
+                print('If you want to go back to menu write "B" or "b".')
+                while not(self.picked_choice):
+                    self.picked_choice = self.handle_select()
         except Exception:
             print('ERROR select_torrent: ')
             logging.error(traceback.format_exc())
@@ -516,13 +529,15 @@ class AutoPy:
         url = self.build_url()
         try:
             self.content_page = requests.get(url)
-        except requests.exceptions.RequestException as e:
-            logging.info('A requests exception has ocurred: ' + str(e))
+            if not(self.content_page.status_code == requests.codes.ok):
+                self.content_page.raise_for_status()
+        except requests.exceptions.RequestException as ex:
+            logging.info('A requests exception has ocurred: ' + str(ex))
             logging.error(traceback.format_exc())
             sys.exit(0)
 
 
-def insert():
+def insert(args):
     """Insert args values into instance variables."""
     string_search = args.str_search
     mode_search = MODES[args.mode]
@@ -542,13 +557,25 @@ def initialize():
 def run_it():
     """Search and download torrents until the user says it so."""
     initialize()
-    auto = AutoPy(*insert())
-    while(auto.keep_search):
-        auto.get_content()
-        auto.select_torrent()
-        raise SystemExit(0)
-        auto.download_torrent()
-        auto.next_step()
+    parser = get_parser()
+    args = None
+    first_parse = True
+    while(True):
+        if first_parse is True:
+            first_parse = False
+            args = parser.parse_args()
+        else:
+            print('Input to search again. ')
+            input_parse = input('>> ').replace("'", "")
+            args = parser.parse_args(input_parse.split(' ', 2))
+
+        if (args.str_search.strip() == ""):
+            print('Please insert an appropiate non-empty string.')
+        else:
+            auto = AutoPy(*insert(args))
+            auto.get_content()
+            auto.select_torrent()
+            auto.download_torrent()
 
 
 if __name__ == '__main__':
