@@ -350,9 +350,12 @@ class AutoPy:
         else:
             print('Error page')
 
-        self.table = [[Colors.BOLD + titles[i][:75].strip() + Colors.ENDC
+        self.table = [[Colors.BOLD +
+                       UnicodeDammit(titles[i][:75].strip()).unicode_markup +
+                       Colors.ENDC
                        if (i + 1) % 2 == 0
-                       else titles[i][:75].strip(),
+                       else UnicodeDammit(
+                           titles[i][:75].strip()).unicode_markup,
                        Colors.SEEDER + seeders[i].strip() + Colors.ENDC
                        if (i + 1) % 2 == 0
                        else Colors.LGREEN + seeders[i].strip() + Colors.ENDC,
