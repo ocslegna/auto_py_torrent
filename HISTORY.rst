@@ -6,6 +6,16 @@ Release History
 Development
 +++++++++++
 
+1.0.4 (2017-07-29)
+++++++++++++++++++
+
+* Improve README. 
+
+**Improvements**
+
+- Provide a better README.
+
+
 1.0.3 (2017-07-28)
 ++++++++++++++++++
 
