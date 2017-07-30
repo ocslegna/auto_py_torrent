@@ -163,5 +163,11 @@ Author
 `Gabriel Scotillo`_  (`@gabrielscotillo`_)
 
 
+Package index
+-------------
+
+`<https://pypi.python.org/pypi/auto-py-torrent>`_.
+
+
 .. _Gabriel Scotillo: https://ocslegna.herokuapp.com
 .. _@gabrielscotillo: https://twitter.com/gabrielscotillo
