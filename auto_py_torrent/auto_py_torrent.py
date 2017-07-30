@@ -148,10 +148,11 @@ def get_parser():
 
 
 def is_num(var):
-    """Check if var is num."""
+    """Check if var string is num. Should use it only with strings."""
     try:
-        return(isinstance(var, int))
-    except Exception:
+        int(var)
+        return True
+    except ValueError:
         return False
 
 
@@ -179,7 +180,6 @@ class AutoPy:
         self.table = None
         self.torrent = ""
         self.torrent_page = torrent_page
-
 
     def open_magnet(self):
         """Open magnet according to os."""
@@ -236,12 +236,14 @@ class AutoPy:
                 print('Nothing found.')
                 return
             if self.mode_search == 'best_rated':
+                print('Downloading..')
                 self.open_magnet()
             elif self.mode_search == 'list':
                 if self.selected is not None:
                     # t_p, pirate and 1337x got magnet inside, else direct.
                     if self.page in ['eztv', 'limetorrents']:
                         self.magnet = self.hrefs[int(self.selected)]
+                        print('Downloading..')
                         self.open_magnet()
                     elif self.page in ['the_pirate_bay',
                                        'torrent_project',
@@ -249,6 +251,7 @@ class AutoPy:
                                        'isohunt']:
                         url = self.hrefs[int(self.selected)]
                         self.get_magnet(url)
+                        print('Downloading..')
                         self.open_magnet()
                     else:
                         print('Bad selected page.')
@@ -466,7 +469,7 @@ class AutoPy:
             self.back_to_menu = True
             return True
         elif is_num(self.selected):
-            if 0 <= int(self.selected) <= len(self.hrefs):
+            if 0 <= int(self.selected) <= len(self.hrefs) - 1:
                 self.back_to_menu = False
                 return True
             else:
@@ -499,10 +502,19 @@ class AutoPy:
             self.soupify()
             if self.mode_search == 'list':
                 self.build_table()
-                print('\nSelect one of the following torrents. ' +
-                      'Enter a number between: 0 and ' + str(len(self.hrefs) - 1))
-                print('If you want to exit write "Q" or "q".')
-                print('If you want to go back to menu write "B" or "b".')
+                if len(self.hrefs) == 1:
+                    print('Press "0" to download it.')
+                elif len(self.hrefs) >= 2:
+                    print('\nSelect one of the following torrents. ' +
+                          'Enter a number between: 0 and ' +
+                          str(len(self.hrefs) - 1))
+
+                print('If you want to exit write "' +
+                      Colors.LRED + 'Q' + Colors.ENDC + '" or "' +
+                      Colors.LRED + 'q' + Colors.ENDC + '".')
+                print('If you want to go back to menu write "' +
+                      Colors.LGREEN + 'B' + Colors.ENDC + '" or "' +
+                      Colors.LGREEN + 'b' + Colors.ENDC + '".')
                 while not(self.picked_choice):
                     self.picked_choice = self.handle_select()
         except Exception:
@@ -565,8 +577,19 @@ def run_it():
             first_parse = False
             args = parser.parse_args()
         else:
-            print('Input to search again. ')
-            input_parse = input('>> ').replace("'", "")
+            print('Input to search again.')
+            print('If you want to exit write "' +
+                    Colors.LRED + 'Q' + Colors.ENDC + '" or "' +
+                    Colors.LRED + 'q' + Colors.ENDC + '".')
+            print('If you want to go back to menu write "' +
+                    Colors.LGREEN + 'B' + Colors.ENDC + '" or "' +
+                    Colors.LGREEN + 'b' + Colors.ENDC + '".')
+            input_parse = input('>> ').replace("'", "").replace('"', '')
+            if input_parse in ['Q', 'q']:
+                sys.exit(1)
+            elif input_parse in ['B', 'b']:
+                continue
+
             args = parser.parse_args(input_parse.split(' ', 2))
 
         if (args.str_search.strip() == ""):
