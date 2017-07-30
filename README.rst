@@ -95,7 +95,7 @@ Install auto_py_torrent and get an example!
     $ sudo pip3 install auto_py_torrent
     
     # Example!
-    $ auto_py_torrent 1 0 "String search"
+    $ auto_py_torrent 1 0 "The simpsons"
 
 
 Usage
@@ -115,14 +115,14 @@ Using ``best_rated`` mode with ``torrent_project`` page:
 
 .. code-block:: bash
 
-    $ auto_py_torrent 0 0 "String search"
+    $ auto_py_torrent 0 0 "The simpsons"
 
 
 Using ``list`` mode with ``the pirate bay`` page:
 
 .. code-block:: bash
 
-    $ auto_py_torrent 1 1 "String search"
+    $ auto_py_torrent 1 1 "The simpsons"
 
 
 Meta
