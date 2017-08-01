@@ -6,6 +6,16 @@ Release History
 Development
 +++++++++++
 
+1.0.5 (2017-07-31)
+++++++++++++++++++
+
+* Dependency fix and minor usage help. 
+
+**Bugfixes**
+
+- Fix bad bs4 dependency string in requires.
+
+
 1.0.4 (2017-07-29)
 ++++++++++++++++++
 

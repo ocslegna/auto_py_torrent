@@ -111,15 +111,25 @@ def get_parser():
     usage_info = Colors.LGREEN + textwrap.dedent(
         '''\
 
-
         Use "python3 %(prog)s --help" for more information.
         Examples:
             use "python3 %(prog)s 0 0 "String search" # best rated.
             use "python3 %(prog)s 1 0 "String search" # list rated.
+
+        Mode options:
+            0: best_rated. # Download the most rated file.
+            1: list. # Get a list, and select one of them.
+
+        Page list options:
+            0: torrent project.
+            1: the pirate bay.
+            2: 1337x.
+            3: eztv.
+            4: limetorrents.
+            5: isohunt.
         ''') + Colors.ENDC
     epi = Colors.LIGHTPURPLE + textwrap.dedent(
         '''\
-
         -> Thanks for using auto_py_torrent!
         ''') + Colors.ENDC
 
@@ -134,12 +144,12 @@ def get_parser():
                         choices=range(len(MODES)),
                         type=int,
                         help='Select mode of torrent download.\n'
-                             '    e.g: 0 or 1')
+                             '    e.g: 0(rated) or 1(list).')
     parser.add_argument('torr_page', action='store',
                         choices=range(len(TORRENTS)),
                         type=int,
                         help='Select torrent page to download from.\n'
-                             '    e.g: 0 or 1 or .. N')
+                             '    e.g: 0 to .. ' + str(len(TORRENTS)-1) + '.')
     parser.add_argument('str_search', action='store',
                         type=str,
                         help='Input torrent string to search.\n'
@@ -579,11 +589,11 @@ def run_it():
         else:
             print('Input to search again.')
             print('If you want to exit write "' +
-                    Colors.LRED + 'Q' + Colors.ENDC + '" or "' +
-                    Colors.LRED + 'q' + Colors.ENDC + '".')
+                  Colors.LRED + 'Q' + Colors.ENDC + '" or "' +
+                  Colors.LRED + 'q' + Colors.ENDC + '".')
             print('If you want to go back to menu write "' +
-                    Colors.LGREEN + 'B' + Colors.ENDC + '" or "' +
-                    Colors.LGREEN + 'b' + Colors.ENDC + '".')
+                  Colors.LGREEN + 'B' + Colors.ENDC + '" or "' +
+                  Colors.LGREEN + 'b' + Colors.ENDC + '".')
             input_parse = input('>> ').replace("'", "").replace('"', '')
             if input_parse in ['Q', 'q']:
                 sys.exit(1)

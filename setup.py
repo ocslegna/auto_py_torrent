@@ -19,8 +19,8 @@ if sys.argv[-1] == 'publish':
 packages = ['auto_py_torrent']
 
 requires = [
-    'requests>=2.18.1'
-    'python3-bs4>=4',
+    'requests>=2.18.1',
+    'beautifulsoup4>=4',
     'tabulate>=0.7.7',
     'coloredlogs>=7.1',
     'lxml'
