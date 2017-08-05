@@ -6,6 +6,16 @@ Release History
 Development
 +++++++++++
 
+1.0.8 (2017-08-04)
+++++++++++++++++++
+
+* Improve README.
+
+**Improvements**
+
+- Provide images to README.
+
+
 1.0.7 (2017-08-04)
 ++++++++++++++++++
 
@@ -14,6 +24,7 @@ Development
 **Improvements**
 
 - Provide a better README, PARSER and remove back to menu option once a file was downloaded or already returned.
+
 
 1.0.5 (2017-07-31)
 ++++++++++++++++++
