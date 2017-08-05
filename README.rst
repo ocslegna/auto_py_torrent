@@ -6,8 +6,8 @@ auto_py_torrent
 Its goal is to make it easier for users to find the files they want and download them instantly.
   
 An ``auto_py_torrent`` command is provided in which the user can currently choose between two modes, ``best_rated`` and ``list`` mode, then it selects one of the torrent tracking pages for multimedia content and finally enter the text of what you want to download.
-  
-  
+
+
 .. contents::
 
 .. section-numbering::
@@ -53,12 +53,12 @@ Using the package manager with different linux distributions:
 
 .. code-block:: bash
 
-    # Fedora, CentOS, RHEL, …
+    # Fedora, CentOS, RHEL.
     $ sudo dnf install python3-pip
 
 .. code-block:: bash
 
-    # Arch Linux
+    # Arch.
     $ pacman -S python3-pip
 
 
@@ -88,13 +88,13 @@ Install auto_py_torrent and get an example!
 
 .. code-block:: bash
 
-    # With venv activated:
+    # With virtual env activated:
     $ pip3 install auto_py_torrent
     
-    #Without:
+    # Without virtual env:
     $ sudo pip3 install auto_py_torrent
     
-    # Example!
+    # This way you are getting a detail list of results from ``torrent_project`` site.
     $ auto_py_torrent 1 0 "The simpsons"
 
 

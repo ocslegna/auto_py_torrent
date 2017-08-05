@@ -63,7 +63,7 @@ setup(
         'Topic :: Terminals',
     ),
     keywords='automate torrent torrent downloads',
-    entry_points = {
+    entry_points={
         'console_scripts': ['auto_py_torrent=auto_py_torrent.auto_py_torrent:main'],
     }
 )

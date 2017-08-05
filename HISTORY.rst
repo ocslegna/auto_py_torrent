@@ -6,6 +6,15 @@ Release History
 Development
 +++++++++++
 
+1.0.7 (2017-08-04)
+++++++++++++++++++
+
+* Improve README, PARSER info and provide more explicit information to the user.
+
+**Improvements**
+
+- Provide a better README, PARSER and remove back to menu option once a file was downloaded or already returned.
+
 1.0.5 (2017-07-31)
 ++++++++++++++++++
 
@@ -19,7 +28,7 @@ Development
 1.0.4 (2017-07-29)
 ++++++++++++++++++
 
-* Improve README. 
+* Improve README.
 
 **Improvements**
 

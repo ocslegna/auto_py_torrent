@@ -4,14 +4,12 @@
 """auto_py_torrent.
 
 This module provides utilities to download a torrent within specific types.
-
 """
-
 
 # Author: Gabriel Scotillo
 # URL: https://github.com/ocslegna/auto_py_torrent
 # Please do not download illegal torrents or torrents that you do not have
-#     permisson to own.
+#     permission to own.
 # This tool is for educational purposes only. Any damage you make will not
 #     affect the author.
 
@@ -104,17 +102,36 @@ def get_parser():
     """
     desc = Colors.LIGHTBLUE + textwrap.dedent(
         '''\
+        Welcome to
+                      _                           _                            _
+           __ _ _   _| |_ ___      _ __  _   _   | |_ ___  _ __ _ __ ___ _ __ | |_
+          / _` | | | | __/ _ \    | '_ \| | | |  | __/ _ \| '__| '__/ _ \ '_ \| __|
+         | (_| | |_| | || (_) |   | |_) | |_| |  | || (_) | |  | | |  __/ | | | |_
+          \__,_|\__,_|\__\___/____| .__/ \__, |___\__\___/|_|  |_|  \___|_| |_|\__|
+                            |_____|_|    |___/_____|
+
         ------------------------------------
-        Tool for download a desired torrent.
+          auto_py_torrent is an automated tool for download files by obtaining
+        torrents or magnets that are in different provided pages that the
+        user can choose.
+
+          Its goal is to make it easier for users to find the files they want
+        and download them instantly.
+
+          An auto_py_torrent command is provided in which the user can
+        currently choose between two modes, best_rated and list mode, then it
+        selects one of the torrent tracking pages for multimedia content and
+        finally enter the text of what you want to download.
         ------------------------------------
         ''') + Colors.ENDC
     usage_info = Colors.LGREEN + textwrap.dedent(
         '''\
 
-        Use "python3 %(prog)s --help" for more information.
+        Use "%(prog)s --help" for more information.
         Examples:
-            use "python3 %(prog)s 0 0 "String search" # best rated.
-            use "python3 %(prog)s 1 0 "String search" # list rated.
+            use "%(prog)s MODE SELECTED_PAGE STRING_TO_SEARCH # generic.
+            use "%(prog)s 0 0 "The simpsons" # best rated.
+            use "%(prog)s 1 0 "The simpsons" # list rated.
 
         Mode options:
             0: best_rated. # Download the most rated file.
@@ -143,12 +160,12 @@ def get_parser():
     parser.add_argument('mode', action='store',
                         choices=range(len(MODES)),
                         type=int,
-                        help='Select mode of torrent download.\n'
+                        help='Select mode of file download.\n'
                              '    e.g: 0(rated) or 1(list).')
     parser.add_argument('torr_page', action='store',
                         choices=range(len(TORRENTS)),
                         type=int,
-                        help='Select torrent page to download from.\n'
+                        help='Select tracking page to download from.\n'
                              '    e.g: 0 to .. ' + str(len(TORRENTS)-1) + '.')
     parser.add_argument('str_search', action='store',
                         type=str,
@@ -364,7 +381,7 @@ class AutoPy:
             print('Error page')
 
         self.table = [[Colors.BOLD +
-                       UnicodeDammit(titles[i][:75].strip()).unicode_markup +
+                       UnicodeDammit(titles[i][:75].strip(), ["utf-8"]).unicode_markup +
                        Colors.ENDC
                        if (i + 1) % 2 == 0
                        else UnicodeDammit(
@@ -522,7 +539,7 @@ class AutoPy:
                 print('If you want to exit write "' +
                       Colors.LRED + 'Q' + Colors.ENDC + '" or "' +
                       Colors.LRED + 'q' + Colors.ENDC + '".')
-                print('If you want to go back to menu write "' +
+                print('If you want to go back to menu and search again write "' +
                       Colors.LGREEN + 'B' + Colors.ENDC + '" or "' +
                       Colors.LGREEN + 'b' + Colors.ENDC + '".')
                 while not(self.picked_choice):
@@ -587,22 +604,30 @@ def run_it():
             first_parse = False
             args = parser.parse_args()
         else:
-            print('Input to search again.')
-            print('If you want to exit write "' +
+            print(textwrap.dedent(
+                '''\
+                Search again like in the beginning.
+                  -- You can either choose best rated or list mode.
+                  -- This time, you can insert the search string without double quotes.
+                  Remember the list mode options!
+                    0: torrent project.
+                    1: the pirate bay.
+                    2: 1337x.
+                    3: eztv.
+                    4: limetorrents.
+                    5: isohunt.
+                '''))
+
+            print('Or.. if you want to exit just write "' +
                   Colors.LRED + 'Q' + Colors.ENDC + '" or "' +
                   Colors.LRED + 'q' + Colors.ENDC + '".')
-            print('If you want to go back to menu write "' +
-                  Colors.LGREEN + 'B' + Colors.ENDC + '" or "' +
-                  Colors.LGREEN + 'b' + Colors.ENDC + '".')
             input_parse = input('>> ').replace("'", "").replace('"', '')
             if input_parse in ['Q', 'q']:
                 sys.exit(1)
-            elif input_parse in ['B', 'b']:
-                continue
 
             args = parser.parse_args(input_parse.split(' ', 2))
 
-        if (args.str_search.strip() == ""):
+        if args.str_search.strip() == "":
             print('Please insert an appropiate non-empty string.')
         else:
             auto = AutoPy(*insert(args))
@@ -619,8 +644,6 @@ def main():
         print('\nSee you the next time.')
     except Exception:
         logging.error(traceback.format_exc())
-    finally:
-        print("Good bye!")
 
 
 if __name__ == '__main__':
