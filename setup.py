@@ -12,7 +12,7 @@ from setuptools import setup
 here = os.path.abspath(os.path.dirname(__file__))
 
 if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist bdist_wheel')
+    os.system('python3 setup.py sdist bdist_wheel')
     os.system('twine upload dist/*')
     sys.exit()
 
