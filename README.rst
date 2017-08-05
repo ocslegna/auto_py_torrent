@@ -7,6 +7,19 @@ Its goal is to make it easier for users to find the files they want and download
   
 An ``auto_py_torrent`` command is provided in which the user can currently choose between two modes, ``best_rated`` and ``list`` mode, then it selects one of the torrent tracking pages for multimedia content and finally enter the text of what you want to download.
 
+We Can ``List`` It Out!
+
+.. image:: https://user-images.githubusercontent.com/6371898/28991985-b72c0340-7967-11e7-97a2-c33d96d43706.png
+    :target: https://github.com/ocslegna/auto_py_torrent/
+
+
+
+With a Little ``Help`` from My Friends!
+
+.. image:: https://user-images.githubusercontent.com/6371898/28991984-b46bb402-7967-11e7-9d39-9f8b55362ac9.png
+    :target: https://github.com/ocslegna/auto_py_torrent/
+
+
 
 .. contents::
 
